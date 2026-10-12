@@ -1,18 +1,16 @@
-import sys
-import codecs
-# إجبار بايثون على اعتماد الترميز العالمي للعربية لمنع أخطاء الـ ASCII
-sys.stdout = codecs.getwriter("utf-8")(sys.stdout.detach())
-
 import os
 from flask import Flask, request, jsonify
 from google import genai
 
 app = Flask(__name__)
 
-# 🔑 ضع مفتاح الـ API المجاني الخاص بك من Google AI Studio هنا
+# 🔥 لمنع تحويل الحروف العربية إلى رموز مشفرة في السيرفر السحابي
+app.config['JSON_AS_ASCII'] = False
+
+# 🔑 مفتاح الـ API الخاص بك جاهز وسليم
 os.environ["GEMINI_API_KEY"] = "AQ.Ab8RN6I0TcNT6vnYTE5Qv2_bD9R5ghPTs3frq1hOf8oTEzEVtA"
 
-# 🤖 مسار استقبال أسئلة الذكاء الاصطناعي من الويب (يدعم اللغة العربية)
+# 🤖 مسار استقبال أسئلة الذكاء الاصطناعي من الويب
 @app.route('/ask-ai', methods=['POST'])
 def ask_ai():
     request_data = request.get_json(force=True)
@@ -25,19 +23,15 @@ def ask_ai():
         # الاتصال بذكاء قوقل الاصطناعي
         client = genai.Client()
         response = client.models.generate_content(
-            model="gemini-3.5-flash-lite",
+            model="gemini-2.5-flash-lite",  # تم تصحيح اسم الموديل ليعمل بدون مشاكل وضغط
             contents=user_message,
         )
         
-        # إرجاع الإجابة مع دعم الترميز العربي
-        return app.response_class(
-            response=jsonify({"response": response.text}).get_data(),
-            status=200,
-            mimetype='application/json'
-        )
+        # إرجاع الإجابة مباشرة كـ JSON نظيف يدعم العربية
+        return jsonify({"response": response.text})
+        
     except Exception as e:
-        error_msg = str(e).encode('utf-8', errors='ignore').decode('utf-8')
-        return jsonify({"response": f"حدث خطأ في الاتصال بالذكاء الاصطناعي: {error_msg}"})
+        return jsonify({"response": f"حدث خطأ في الاتصال بالذكاء الاصطناعي: {str(e)}"})
 
 # المسار الرئيسي للموقع (واجهة شات ذكية وصافية)
 @app.route('/')
