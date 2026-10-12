@@ -1,37 +1,44 @@
+import sys
+import codecs
+# إجبار بايثون على اعتماد الترميز العالمي للعربية لمنع أخطاء الـ ASCII
+sys.stdout = codecs.getwriter("utf-8")(sys.stdout.detach())
+
 import os
 from flask import Flask, request, jsonify
-from google import genai
+from  google import genai
+
 
 app = Flask(__name__)
 
-# 🔥 لمنع تحويل الحروف العربية إلى رموز مشفرة في السيرفر السحابي
-app.config['JSON_AS_ASCII'] = False
-
-# 🔑 مفتاح الـ API الخاص بك جاهز وسليم
+# 🔑 ضع مفتاح الـ API المجاني الخاص بك من Google AI Studio هنا
 os.environ["GEMINI_API_KEY"] = "AQ.Ab8RN6I0TcNT6vnYTE5Qv2_bD9R5ghPTs3frq1hOf8oTEzEVtA"
 
-# 🤖 مسار استقبال أسئلة الذكاء الاصطناعي من الويب
+# 🤖 مسار استقبال أسئلة الذكاء الاصطناعي من الويب (يدعم اللغة العربية)
 @app.route('/ask-ai', methods=['POST'])
 def ask_ai():
     request_data = request.get_json(force=True)
     user_message = request_data.get('message', '')
     
     if not user_message:
-        return jsonify({"response": "يوسف يا عبد اكتب سؤال"})
+        return jsonify({"response": "يوسف يا عبد اكتب سؤال وعجل عشان ماني فاضيلك"})
     
     try:
         # الاتصال بذكاء قوقل الاصطناعي
         client = genai.Client(api_key=os.environ.get("GEMINI_API_KEY"))
         response = client.models.generate_content(
-            model="gemini-2.5-flash-lite",  # تم تصحيح اسم الموديل ليعمل بدون مشاكل وضغط
+            model="gemini-3.5-flash-lite",
             contents=user_message,
         )
         
-        # إرجاع الإجابة مباشرة كـ JSON نظيف يدعم العربية
-        return jsonify({"response": response.text})
-        
+        # إرجاع الإجابة مع دعم الترميز العربي
+        return app.response_class(
+            response=jsonify({"response": response.text}).get_data(),
+            status=200,
+            mimetype='application/json'
+        )
     except Exception as e:
-        return jsonify({"response": f"حدث خطأ في الاتصال بالذكاء الاصطناعي: {str(e)}"})
+        error_msg = str(e).encode('utf-8', errors='ignore').decode('utf-8')
+        return jsonify({"response": f"حدث خطأ في الاتصال بالذكاء الاصطناعي: {error_msg}"})
 
 # المسار الرئيسي للموقع (واجهة شات ذكية وصافية)
 @app.route('/')
@@ -50,7 +57,7 @@ def home():
                 <button onclick="sendMessage()" style="padding: 12px; background: #319795; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 16px; width: 20%; font-weight: bold; transition: 0.2s;">إرسال</button>
             </div>
         </div>
-        <p style="color: #a0aec0; font-size: 12px;">مدعوم بنموذج Gemini AI ومتصل سحابياً</p>
+        
     </div>
 
     <!-- 📜 كود جافاسكريبت المحدث للدردشة التفاعلية -->
