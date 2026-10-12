@@ -21,7 +21,7 @@ def ask_ai():
     
     try:
         # الاتصال بذكاء قوقل الاصطناعي
-        client = genai.Client()
+        client = genai.Client(api_key=os.environ.get("GEMINI_API_KEY"))
         response = client.models.generate_content(
             model="gemini-2.5-flash-lite",  # تم تصحيح اسم الموديل ليعمل بدون مشاكل وضغط
             contents=user_message,
